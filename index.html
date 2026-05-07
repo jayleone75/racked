@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
+<link rel="apple-touch-icon" href="./icons/icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+<title>Racked</title>
+<style>
+:root {
+  --bg: #000000; --bg2: #0A0A0C; --card: #141416; --card2: #1E1E20;
+  --line: #26262A; --text: #FFFFFF; --mute: #8A8A8C; --dim: #555558;
+  --accent: #DEFF36; --accent-dim: #B8D62E; --warn: #FFD93D; --bad: #FF5757; --push: #FF8A4C;
+  --grad: linear-gradient(135deg,#DEFF36 0%,#FFFFFF 100%);
+  --display: "Bebas Neue", "Oswald", "Roboto Condensed", "Arial Narrow", sans-serif;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin:0; padding:0; background:var(--bg); color:var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 15px; line-height: 1.4; min-height: 100vh; overscroll-behavior-y: none; }
+button, input, select, textarea { font-family: inherit; color: inherit; }
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance: textfield; }
+
+.app { max-width: 480px; margin: 0 auto; padding-bottom: 88px; }
+
+.appbar {
+  position: sticky; top: 0; z-index: 10;
+  background: linear-gradient(180deg, rgba(11,15,20,0.98) 0%, rgba(11,15,20,0.92) 80%, transparent 100%);
+  backdrop-filter: blur(8px);
+  padding: env(safe-area-inset-top, 12px) 18px 14px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.brand {
+  font-family: var(--display); font-size: 32px; font-weight: 400;
+  color: var(--text); letter-spacing: 0.04em; line-height: 1;
+}
+.brand .b2 { color: var(--accent); }
+.appbar .right { font-size: 12px; color: var(--mute); }
+
+.view { display: none; }
+.view.on { display: block; animation: fade .2s ease; }
+@keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+h2.section { font-family: var(--display); font-size: 18px; font-weight: 400; color: var(--mute);
+  text-transform: uppercase; letter-spacing: 0.12em; margin: 24px 16px 8px; }
+
+.card { background: var(--card); border-radius: 18px; padding: 16px; margin: 10px 16px;
+  border: 1px solid rgba(255,255,255,0.04); }
+.muted { color: var(--mute); font-size: 13px; }
+
+/* Recommendation card */
+.rec {
+  margin: 12px 16px; padding: 18px; border-radius: 18px;
+  background: rgba(222,255,54,0.08);
+  border: 1px solid rgba(222,255,54,0.3);
+}
+.rec .pill {
+  display: inline-block; font-family: var(--display); font-size: 12px; font-weight: 400;
+  letter-spacing: 0.14em; text-transform: uppercase; padding: 3px 10px; border-radius: 4px;
+  background: var(--accent); color: #000; margin-bottom: 10px;
+}
+.rec h3 { margin: 0 0 4px; font-size: 18px; font-weight: 800; letter-spacing: -0.01em; }
+.rec p { margin: 0; color: var(--mute); font-size: 14px; }
+
+/* Continue card */
+.continue {
+  margin: 12px 16px; padding: 16px; border-radius: 18px;
+  background: rgba(251,146,60,0.08); border: 1px solid rgba(251,146,60,0.3);
+  display: flex; align-items: center; justify-content: space-between; cursor: pointer;
+}
+.continue .label { font-size: 11px; font-weight: 700; color: var(--push); letter-spacing: 0.1em; text-transform: uppercase; }
+.continue .name { font-size: 16px; font-weight: 700; margin-top: 2px; }
+.continue .when { font-size: 12px; color: var(--mute); margin-top: 2px; }
+.continue .arrow { font-size: 22px; color: var(--push); }
+
+/* Template tiles */
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 16px; }
+.tile { background: var(--card); border-radius: 16px; padding: 16px 14px; cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.04); transition: transform .1s, border-color .15s;
+  display: flex; flex-direction: column; min-height: 110px; }
+.tile:active { transform: scale(0.97); }
+.tile .ticon { font-size: 36px; line-height: 1; margin-bottom: 6px; user-select: none; }
+.tile .tname { font-family: var(--display); font-size: 22px; font-weight: 400; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--text); }
+.tile .tsub { font-size: 12px; color: var(--mute); margin-top: 4px; flex: 1; }
+.tile .tdays { font-size: 11px; color: var(--dim); margin-top: 8px; }
+.tile.accent { border-color: rgba(222,255,54,0.4); background: rgba(222,255,54,0.06); }
+.tile.accent .tname { color: var(--accent); }
+
+/* Recent list */
+.recent-row { display: flex; gap: 12px; padding: 12px 14px; align-items: center;
+  background: var(--card); border-radius: 14px; margin: 6px 16px; cursor: pointer; }
+.recent-row .when { font-size: 11px; color: var(--mute); width: 50px; flex-shrink: 0; }
+.recent-row .ttl { font-size: 14px; font-weight: 600; flex: 1; }
+.recent-row .ton { font-size: 12px; color: var(--accent); font-weight: 600; }
+
+/* Day picker (modal) */
+.modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 50; backdrop-filter: blur(4px); }
+.modal { position: fixed; bottom: 0; left: 0; right: 0; z-index: 60; background: var(--bg2);
+  border-radius: 22px 22px 0 0; padding: 18px 16px calc(20px + env(safe-area-inset-bottom)); max-width: 480px; margin: 0 auto;
+  animation: slideUp .25s ease; max-height: 80vh; overflow-y: auto; }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: none; } }
+.modal h3 { margin: 0 0 4px; font-size: 18px; }
+.modal .sub { color: var(--mute); font-size: 13px; margin-bottom: 14px; }
+.day-list { display: flex; flex-direction: column; gap: 8px; }
+.day-row { background: var(--card); padding: 14px; border-radius: 12px; cursor: pointer;
+  display: flex; justify-content: space-between; align-items: center; border: 1px solid transparent; }
+.day-row:active { border-color: var(--accent); }
+.day-row .dn { font-weight: 600; }
+.day-row .dx { font-size: 12px; color: var(--mute); }
+.modal-close { background: none; border: 1px solid var(--line); color: var(--mute); padding: 10px;
+  border-radius: 10px; width: 100%; margin-top: 12px; font-weight: 600; cursor: pointer; }
+
+/* Workout view */
+#view-workout { padding-bottom: 100px; }
+.wbar {
+  position: sticky; top: 0; z-index: 5; background: var(--bg);
+  padding: env(safe-area-inset-top, 8px) 12px 10px;
+  display: flex; gap: 10px; align-items: center; border-bottom: 1px solid var(--line);
+}
+.wbar .close { background: none; border: none; color: var(--mute); font-size: 24px; cursor: pointer; padding: 4px 8px; }
+.wbar .wname { flex: 1; background: none; border: none; font-size: 18px; font-weight: 700;
+  outline: none; padding: 4px 0; }
+.wbar .finish { background: var(--accent); color: #000; border: none; padding: 8px 14px;
+  border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; }
+
+.exercise { background: var(--card); border-radius: 16px; margin: 10px 14px; padding: 14px;
+  border: 1px solid rgba(255,255,255,0.03); }
+.exercise .ehead { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+.exercise .ename { flex: 1; font-size: 16px; font-weight: 700; background: none; border: none; outline: none; }
+.exercise .emenu { background: none; border: none; color: var(--dim); font-size: 18px; cursor: pointer; padding: 4px 8px; }
+.exercise .emuscles { font-size: 11px; color: var(--mute); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+.set-table { width: 100%; }
+.set-head { display: grid; grid-template-columns: 30px 1fr 1fr 50px 32px;
+  gap: 8px; font-size: 10px; font-weight: 700; color: var(--dim);
+  text-transform: uppercase; letter-spacing: 0.08em; padding: 0 4px 6px; }
+.set-row { display: grid; grid-template-columns: 30px 1fr 1fr 50px 32px;
+  gap: 8px; align-items: center; padding: 6px 4px; border-radius: 8px; }
+.set-row.done { background: rgba(222,255,54,0.06); }
+.set-row .num { font-size: 13px; font-weight: 700; color: var(--mute); text-align: center; }
+.set-row input { background: var(--bg2); border: 1px solid var(--line); border-radius: 8px;
+  padding: 8px; font-size: 15px; font-weight: 600; text-align: center; width: 100%; }
+.set-row input:focus { border-color: var(--accent); outline: none; }
+.set-row .rpe { font-size: 14px; padding: 8px 4px; }
+.set-row .check { background: none; border: 1px solid var(--line); border-radius: 8px;
+  width: 32px; height: 32px; cursor: pointer; color: var(--mute); font-size: 16px; }
+.set-row.done .check { background: var(--accent); color: #000; border-color: var(--accent); }
+.set-row .del { background: none; border: none; color: var(--bad); font-size: 16px; cursor: pointer; padding: 4px; }
+
+.add-btn { width: 100%; background: rgba(222,255,54,0.06); border: 1px dashed rgba(222,255,54,0.3);
+  color: var(--accent); padding: 10px; border-radius: 10px; font-weight: 600; font-size: 13px;
+  cursor: pointer; margin-top: 10px; }
+
+.add-exercise {
+  background: rgba(222,255,54,0.08); border: 1px dashed rgba(222,255,54,0.4);
+  color: var(--accent); padding: 14px; border-radius: 14px; margin: 10px 14px; cursor: pointer;
+  text-align: center; font-weight: 600; font-size: 14px;
+}
+
+.ex-search { width: calc(100% - 32px); margin: 0 16px 8px; padding: 12px;
+  background: var(--card); border: 1px solid var(--line); border-radius: 10px; font-size: 14px; outline: none; }
+.ex-search:focus { border-color: var(--accent); }
+.ex-list .row { padding: 10px 16px; cursor: pointer; border-bottom: 1px solid var(--line); }
+.ex-list .row:active { background: var(--card); }
+.ex-list .rn { font-weight: 600; }
+.ex-list .rm { font-size: 11px; color: var(--mute); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* Summary */
+.summary-hero { padding: 20px 18px; text-align: center; }
+.summary-hero .big { font-family: var(--display); font-size: 64px; font-weight: 400; letter-spacing: 0.02em;
+  color: var(--accent); line-height: 1; }
+.summary-hero .lbl { font-size: 12px; color: var(--mute); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; margin-top: 4px; }
+.summary-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 8px 16px; }
+.summary-stats .s { background: var(--card); border-radius: 12px; padding: 12px 8px; text-align: center; }
+.summary-stats .s .n { font-size: 18px; font-weight: 700; }
+.summary-stats .s .l { font-size: 10px; color: var(--mute); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 3px; font-weight: 600; }
+.export-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 16px; }
+.export-btn { background: var(--card2); border: 1px solid rgba(255,255,255,0.06); padding: 12px;
+  border-radius: 12px; color: var(--text); font-weight: 600; font-size: 13px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px; }
+.export-btn:active { background: var(--card); }
+.done-btn { width: calc(100% - 32px); margin: 14px 16px;
+  background: var(--accent); color: #000; border: none;
+  padding: 14px; border-radius: 14px; font-weight: 700; font-size: 16px; cursor: pointer; }
+
+/* History */
+.history-row { background: var(--card); border-radius: 14px; padding: 14px; margin: 8px 16px;
+  display: flex; gap: 12px; align-items: center; cursor: pointer; }
+.history-row .date { font-size: 11px; color: var(--mute); width: 60px; flex-shrink: 0; line-height: 1.2; }
+.history-row .date .day { font-size: 18px; font-weight: 700; color: var(--text); display: block; }
+.history-row .info { flex: 1; min-width: 0; }
+.history-row .name { font-weight: 700; font-size: 15px; }
+.history-row .meta { font-size: 12px; color: var(--mute); margin-top: 2px; }
+.history-row .ton { font-size: 13px; font-weight: 700; color: var(--accent); }
+
+.empty { text-align: center; color: var(--mute); padding: 40px 16px; }
+.empty .ic { font-size: 36px; margin-bottom: 8px; opacity: 0.5; }
+
+/* Stats placeholder */
+.totals { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; margin: 12px 16px; }
+.totals .t { background: var(--card); padding: 10px 4px; border-radius: 12px; text-align: center; }
+.totals .t .n { font-size: 16px; font-weight: 700; }
+.totals .t .l { font-size: 9px; color: var(--mute); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 3px; }
+
+/* Tabbar */
+.tabbar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
+  background: rgba(11,15,20,0.95); backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255,255,255,0.05);
+  padding: 6px 0 calc(6px + env(safe-area-inset-bottom, 0px));
+  display: flex; justify-content: space-around; max-width: 480px; margin: 0 auto;
+}
+.tabbar.hidden { display: none; }
+.tabbar button { flex: 1; background: none; border: none; color: var(--mute); padding: 8px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.04em; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 4px; transition: color .15s; }
+.tabbar button.on { color: var(--accent); }
+.tabbar button svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Toast */
+.toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+  background: var(--card2); padding: 10px 16px; border-radius: 999px; z-index: 100;
+  font-size: 13px; font-weight: 600; border: 1px solid var(--line); animation: toastIn .25s ease; }
+@keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(8px); } to { opacity: 1; transform: translateX(-50%); } }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="appbar">
+    <div class="brand">RAC<span class="b2">KED</span></div>
+    <div class="right" id="appbar-right"></div>
+  </header>
+
+  <!-- HOME -->
+  <section id="view-home" class="view on">
+    <div id="continue-slot"></div>
+    <div id="rec-slot"></div>
+
+    <h2 class="section">Pick a template</h2>
+    <div class="tiles" id="tiles"></div>
+
+    <h2 class="section">Recent workouts</h2>
+    <div id="recent-slot"></div>
+  </section>
+
+  <!-- WORKOUT -->
+  <section id="view-workout" class="view">
+    <div class="wbar">
+      <button class="close" onclick="cancelWorkout()" aria-label="Close">×</button>
+      <input class="wname" id="wname" placeholder="Workout name">
+      <button class="finish" onclick="finishWorkout()">Finish</button>
+    </div>
+    <div id="exercises"></div>
+    <button class="add-exercise" onclick="addExerciseDialog()">+ Add exercise</button>
+  </section>
+
+  <!-- SUMMARY -->
+  <section id="view-summary" class="view">
+    <div class="summary-hero">
+      <div class="lbl">Workout complete</div>
+      <div class="big" id="sum-tonnage">—</div>
+      <div class="lbl">total tonnage</div>
+    </div>
+    <div class="summary-stats">
+      <div class="s"><div class="n" id="sum-sets">—</div><div class="l">Sets</div></div>
+      <div class="s"><div class="n" id="sum-reps">—</div><div class="l">Reps</div></div>
+      <div class="s"><div class="n" id="sum-time">—</div><div class="l">Duration</div></div>
+    </div>
+    <div class="card">
+      <div class="muted" style="font-size:12px; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.08em; font-weight:700;">Top set per exercise</div>
+      <div id="sum-tops"></div>
+    </div>
+
+    <h2 class="section">Send to LLM</h2>
+    <div class="export-row">
+      <button class="export-btn" onclick="exportLLM('chatgpt')">ChatGPT</button>
+      <button class="export-btn" onclick="exportLLM('claude')">Claude</button>
+      <button class="export-btn" onclick="exportLLM('copy')">Copy</button>
+      <button class="export-btn" onclick="exportLLM('share')">Share</button>
+    </div>
+    <button class="done-btn" onclick="goto('home')">Done</button>
+  </section>
+
+  <!-- HISTORY -->
+  <section id="view-history" class="view">
+    <div id="history-slot"></div>
+  </section>
+
+  <!-- WORKOUT DETAIL -->
+  <section id="view-detail" class="view">
+    <div class="wbar">
+      <button class="close" onclick="goto('history')" aria-label="Back">‹</button>
+      <div class="wname" id="detail-name" style="padding-left:0;"></div>
+    </div>
+    <div id="detail-body"></div>
+  </section>
+
+  <!-- STATS -->
+  <section id="view-stats" class="view">
+    <div class="totals">
+      <div class="t"><div class="n" id="stat-sessions">—</div><div class="l">Sessions</div></div>
+      <div class="t"><div class="n" id="stat-tonnage">—</div><div class="l">Tonnage</div></div>
+      <div class="t"><div class="n" id="stat-sets">—</div><div class="l">Sets</div></div>
+      <div class="t"><div class="n" id="stat-reps">—</div><div class="l">Reps</div></div>
+    </div>
+    <div class="card">
+      <div class="muted" style="font-size:12px; margin-bottom:10px; text-transform:uppercase; letter-spacing:0.08em; font-weight:700;">Frequency by muscle (last 30 days)</div>
+      <div id="stat-freq"></div>
+    </div>
+    <div class="card">
+      <div class="muted" style="font-size:12px; margin-bottom:10px; text-transform:uppercase; letter-spacing:0.08em; font-weight:700;">Top lifts (best e1RM)</div>
+      <div id="stat-prs"></div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="view-settings" class="view">
+    <div class="card">
+      <div class="muted" style="font-size:12px; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.08em; font-weight:700;">Units</div>
+      <div style="display:flex; gap:8px; margin-bottom: 14px;">
+        <button class="export-btn" id="unit-lbs" onclick="setUnits('lbs')" style="flex:1;">lbs</button>
+        <button class="export-btn" id="unit-kg" onclick="setUnits('kg')" style="flex:1;">kg</button>
+      </div>
+      <div class="muted" style="font-size:12px; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.08em; font-weight:700;">Data</div>
+      <button class="export-btn" onclick="exportAllData()" style="width:100%; margin-bottom:8px;">Export all workouts (JSON)</button>
+      <button class="export-btn" onclick="clearAllData()" style="width:100%; color: var(--bad); border-color: rgba(248,113,113,0.2);">Clear all data</button>
+    </div>
+    <div class="card" style="text-align:center;">
+      <div class="muted" style="font-size:12px;">Racked v0.1 · Built by Jay</div>
+    </div>
+  </section>
+</div>
+
+<nav class="tabbar" id="tabbar">
+  <button class="on" data-view="home"><svg viewBox="0 0 24 24"><path d="M3 12 12 4l9 8M5 10v10h14V10"/></svg><span>Home</span></button>
+  <button data-view="history"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>History</span></button>
+  <button data-view="stats"><svg viewBox="0 0 24 24"><path d="M3 17l5-5 4 4 7-9"/><path d="M14 7h6v6"/></svg><span>Stats</span></button>
+  <button data-view="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M5 12H2M22 12h-3M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12"/></svg><span>Settings</span></button>
+</nav>
+
+<script>
+// ============== TEMPLATE ICONS ==============
+// Cheeky emoji icons. Renders natively on Android Chrome (Google emoji set).
+const ICONS = {
+  "bro-split":   "💪",  // flexed bicep, peak bro
+  "ppl":         "👥",  // people — PPL = "ppl"
+  "booty-camp":  "🍑",  // peach, glute focus
+  "tris-thighs": "🍗",  // poultry leg, double meaning on "thighs"
+  "big-three":   "🏋️",  // weightlifter, the three big lifts
+  "gauntlet":    "🥊",  // boxing glove, run the gauntlet
+  "nice-pair":   "🍒",  // cherries, naturally a pair
+  "open-bar":    "🍸",  // cocktail, open bar pun
+};
+
+// ============== TEMPLATES ==============
+const TEMPLATES = [
+  {
+    id: "bro-split", name: "Bro Split", tagline: "Classic 5-day body part",
+    days: [
+      { name: "Chest", exercises: [
+        { name: "Bench Press", muscles: ["chest","triceps"], sets: 4, reps: "8-10" },
+        { name: "Incline Dumbbell Press", muscles: ["chest","shoulders"], sets: 3, reps: "8-10" },
+        { name: "Cable Flyes", muscles: ["chest"], sets: 3, reps: "12-15" },
+        { name: "Dips", muscles: ["chest","triceps"], sets: 3, reps: "8-12" },
+        { name: "Cable Crossover", muscles: ["chest"], sets: 3, reps: "12-15" },
+      ]},
+      { name: "Back", exercises: [
+        { name: "Deadlift", muscles: ["back","hamstrings","glutes"], sets: 4, reps: "5-8" },
+        { name: "Pull-ups", muscles: ["back","biceps"], sets: 3, reps: "6-10" },
+        { name: "Barbell Row", muscles: ["back","biceps"], sets: 3, reps: "8-10" },
+        { name: "Lat Pulldown", muscles: ["back","biceps"], sets: 3, reps: "10-12" },
+        { name: "Cable Row", muscles: ["back","biceps"], sets: 3, reps: "10-12" },
+      ]},
+      { name: "Shoulders", exercises: [
+        { name: "Overhead Press", muscles: ["shoulders","triceps"], sets: 4, reps: "6-8" },
+        { name: "Lateral Raise", muscles: ["shoulders"], sets: 3, reps: "12-15" },
+        { name: "Front Raise", muscles: ["shoulders"], sets: 3, reps: "12-15" },
+        { name: "Rear Delt Fly", muscles: ["shoulders"], sets: 3, reps: "12-15" },
+        { name: "Shrugs", muscles: ["shoulders","back"], sets: 3, reps: "10-12" },
+      ]},
+      { name: "Arms", exercises: [
+        { name: "Barbell Curl", muscles: ["biceps"], sets: 3, reps: "8-10" },
+        { name: "Hammer Curl", muscles: ["biceps"], sets: 3, reps: "10-12" },
+        { name: "Tricep Pushdown", muscles: ["triceps"], sets: 3, reps: "10-12" },
+        { name: "Skull Crusher", muscles: ["triceps"], sets: 3, reps: "10-12" },
+        { name: "Cable Curl", muscles: ["biceps"], sets: 3, reps: "12-15" },
+      ]},
+      { name: "Legs", exercises: [
+        { name: "Squat", muscles: ["quads","glutes","core"], sets: 4, reps: "6-8" },
+        { name: "Leg Press", muscles: ["quads","glutes"], sets: 3, reps: "10-12" },
+        { name: "Romanian Deadlift", muscles: ["hamstrings","glutes"], sets: 3, reps: "8-10" },
+        { name: "Leg Extension", muscles: ["quads"], sets: 3, reps: "12-15" },
+        { name: "Leg Curl", muscles: ["hamstrings"], sets: 3, reps: "12-15" },
+        { name: "Calf Raise", muscles: ["calves"], sets: 4, reps: "12-15" },
+      ]},
+    ],
+  },
+  {
+    id: "ppl", name: "PPL", tagline: "Push / Pull / Legs",
+    days: [
+      { name: "Push", exercises: [
+        { name: "Bench Press", muscles: ["chest","triceps"], sets: 4, reps: "6-8" },
+        { name: "Overhead Press", muscles: ["shoulders","triceps"], sets: 3, reps: "8-10" },
+        { name: "Incline Dumbbell Press", muscles: ["chest","shoulders"], sets: 3, reps: "10-12" },
+        { name: "Lateral Raise", muscles: ["shoulders"], sets: 3, reps: "12-15" },
+        { name: "Tricep Pushdown", muscles: ["triceps"], sets: 3, reps: "10-12" },
+      ]},
+      { name: "Pull", exercises: [
+        { name: "Deadlift", muscles: ["back","hamstrings","glutes"], sets: 4, reps: "5-6" },
+        { name: "Pull-ups", muscles: ["back","biceps"], sets: 3, reps: "6-10" },
+        { name: "Barbell Row", muscles: ["back","biceps"], sets: 3, reps: "8-10" },
+        { name: "Cable Row", muscles: ["back","biceps"], sets: 3, reps: "10-12" },
+        { name: "Barbell Curl", muscles: ["biceps"], sets: 3, reps: "8-10" },
+      ]},
+      { name: "Legs", exercises: [
+        { name: "Squat", muscles: ["quads","glutes","core"], sets: 4, reps: "6-8" },
+        { name: "Romanian Deadlift", muscles: ["hamstrings","glutes"], sets: 3, reps: "8-10" },
+        { name: "Leg Press", muscles: ["quads","glutes"], sets: 3, reps: "10-12" },
+        { name: "Leg Curl", muscles: ["hamstrings"], sets: 3, reps: "12-15" },
+        { name: "Calf Raise", muscles: ["calves"], sets: 4, reps: "12-15" },
+      ]},
+    ],
+  },
+  {
+    id: "booty-camp", name: "Booty Camp", tagline: "Glute / lower emphasis",
+    days: [
+      { name: "Glute Focus", exercises: [
+        { name: "Hip Thrust", muscles: ["glutes","hamstrings"], sets: 4, reps: "8-10" },
+        { name: "Romanian Deadlift", muscles: ["hamstrings","glutes"], sets: 3, reps: "8-10" },
+        { name: "Bulgarian Split Squat", muscles: ["glutes","quads"], sets: 3, reps: "10-12" },
+        { name: "Cable Kickback", muscles: ["glutes"], sets: 3, reps: "12-15" },
+        { name: "Glute Bridge", muscles: ["glutes"], sets: 3, reps: "12-15" },
+      ]},
+      { name: "Quad / Lower", exercises: [
+        { name: "Squat", muscles: ["quads","glutes","core"], sets: 4, reps: "8-10" },
+        { name: "Walking Lunges", muscles: ["quads","glutes"], sets: 3, reps: "10-12" },
+        { name: "Leg Press", muscles: ["quads","glutes"], sets: 3, reps: "10-12" },
+        { name: "Leg Extension", muscles: ["quads"], sets: 3, reps: "12-15" },
+        { name: "Calf Raise", muscles: ["calves"], sets: 4, reps: "12-15" },
+      ]},
+      { name: "Posterior Chain", exercises: [
+        { name: "Deadlift", muscles: ["back","hamstrings","glutes"], sets: 4, reps: "5-8" },
+        { name: "Good Morning", muscles: ["hamstrings","back"], sets: 3, reps: "8-10" },
+        { name: "Hamstring Curl", muscles: ["hamstrings"], sets: 3, reps: "10-12" },
+        { name: "Hyperextension", muscles: ["back","glutes"], sets: 3, reps: "12-15" },
+        { name: "Step-up", muscles: ["glutes","quads"], sets: 3, reps: "10-12" },
+      ]},
+    ],
+  },
+  {
+    id: "tris-thighs", name: "Tris & Thighs", tagline: "Tone / recomp, arms + legs focus",
+    days: [
+      { name: "Arms & Quads", exercises: [
+        { name: "Goblet Squat", muscles: ["quads","glutes"], sets: 3, reps: "10-12" },
+        { name: "Walking Lunges", muscles: ["quads","glutes"], sets: 3, reps: "10-12" },
+        { name: "Leg Extension", muscles: ["quads"], sets: 3, reps: "12-15" },
+        { name: "Tricep Pushdown", muscles: ["triceps"], sets: 3, reps: "10-12" },
+        { name: "Bicep Curl", muscles: ["biceps"], sets: 3, reps: "10-12" },
+        { name: "Hammer Curl", muscles: ["biceps"], sets: 3, reps: "10-12" },
+      ]},
+      { name: "Glutes & Tris", exercises: [
+        { name: "Hip Thrust", muscles: ["glutes","hamstrings"], sets: 4, reps: "8-10" },
+        { name: "Romanian Deadlift", muscles: ["hamstrings","glutes"], sets: 3, reps: "8-10" },
+        { name: "Bulgarian Split Squat", muscles: ["glutes","quads"], sets: 3, reps: "10-12" },
+        { name: "Skull Crusher", muscles: ["triceps"], sets: 3, reps: "10-12" },
+        { name: "Overhead Tricep Extension", muscles: ["triceps"], sets: 3, reps: "10-12" },
+        { name: "Tricep Kickback", muscles: ["triceps"], sets: 3, reps: "12-15" },
+      ]},
+    ],
+  },
+  {
+    id: "big-three", name: "Big Three", tagline: "Squat / Bench / Deadlift",
+    days: [
+      { name: "Squat Day", exercises: [
+        { name: "Squat", muscles: ["quads","glutes","core"], sets: 5, reps: "5" },
+        { name: "Front Squat", muscles: ["quads","core"], sets: 3, reps: "6-8" },
+        { name: "Leg Press", muscles: ["quads","glutes"], sets: 3, reps: "8-10" },
+        { name: "Leg Curl", muscles: ["hamstrings"], sets: 3, reps: "10-12" },
+        { name: "Plank", muscles: ["core"], sets: 3, reps: "60s" },
+      ]},
+      { name: "Bench Day", exercises: [
+        { name: "Bench Press", muscles: ["chest","triceps"], sets: 5, reps: "5" },
+        { name: "Close-Grip Bench", muscles: ["triceps","chest"], sets: 3, reps: "6-8" },
+        { name: "Incline Dumbbell Press", muscles: ["chest","shoulders"], sets: 3, reps: "8-10" },
+        { name: "Tricep Pushdown", muscles: ["triceps"], sets: 3, reps: "10-12" },
+        { name: "Lateral Raise", muscles: ["shoulders"], sets: 3, reps: "12-15" },
+      ]},
+      { name: "Deadlift Day", exercises: [
+        { name: "Deadlift", muscles: ["back","hamstrings","glutes"], sets: 5, reps: "5" },
+        { name: "Romanian Deadlift", muscles: ["hamstrings","glutes"], sets: 3, reps: "6-8" },
+        { name: "Barbell Row", muscles: ["back","biceps"], sets: 3, reps: "8-10" },
+        { name: "Pull-ups", muscles: ["back","biceps"], sets: 3, reps: "6-10" },
+        { name: "Bicep Curl", muscles: ["biceps"], sets: 3, reps: "10-12" },
+      ]},
+    ],
+  },
+  {
+    id: "gauntlet", name: "The Gauntlet", tagline: "Full-body circuit, 3 rounds",
+    days: [
+      { name: "Circuit", exercises: [
+        { name: "Goblet Squat", muscles: ["quads","glutes"], sets: 3, reps: "12" },
+        { name: "Push-up", muscles: ["chest","triceps"], sets: 3, reps: "12" },
+        { name: "Bent-over Row", muscles: ["back","biceps"], sets: 3, reps: "12" },
+        { name: "Kettlebell Swing", muscles: ["glutes","hamstrings","core"], sets: 3, reps: "15" },
+        { name: "Walking Lunges", muscles: ["quads","glutes"], sets: 3, reps: "10/leg" },
+        { name: "Mountain Climbers", muscles: ["core"], sets: 3, reps: "30s" },
+        { name: "Plank", muscles: ["core"], sets: 3, reps: "45s" },
+        { name: "Burpees", muscles: ["chest","quads","core"], sets: 3, reps: "10" },
+      ]},
+    ],
+  },
+  {
+    id: "nice-pair", name: "Nice Pair", tagline: "Supersets",
+    days: [
+      { name: "Push Pair", exercises: [
+        { name: "Bench Press + Lateral Raise", muscles: ["chest","triceps","shoulders"], sets: 3, reps: "8 / 12" },
+        { name: "Incline Press + Tricep Pushdown", muscles: ["chest","triceps"], sets: 3, reps: "10 / 12" },
+        { name: "Cable Flyes + Skull Crusher", muscles: ["chest","triceps"], sets: 3, reps: "12 / 12" },
+        { name: "Cable Crossover + Front Raise", muscles: ["chest","shoulders"], sets: 3, reps: "12 / 12" },
+      ]},
+      { name: "Pull Pair", exercises: [
+        { name: "Deadlift + Bicep Curl", muscles: ["back","biceps"], sets: 3, reps: "6 / 10" },
+        { name: "Pull-up + Hammer Curl", muscles: ["back","biceps"], sets: 3, reps: "8 / 12" },
+        { name: "Barbell Row + Cable Curl", muscles: ["back","biceps"], sets: 3, reps: "10 / 12" },
+        { name: "Lat Pulldown + Reverse Curl", muscles: ["back","biceps"], sets: 3, reps: "12 / 12" },
+      ]},
+      { name: "Legs Pair", exercises: [
+        { name: "Squat + Calf Raise", muscles: ["quads","glutes","calves"], sets: 3, reps: "8 / 15" },
+        { name: "RDL + Leg Extension", muscles: ["hamstrings","quads"], sets: 3, reps: "10 / 12" },
+        { name: "Leg Press + Leg Curl", muscles: ["quads","hamstrings"], sets: 3, reps: "10 / 12" },
+        { name: "Walking Lunges + Glute Bridge", muscles: ["glutes","quads"], sets: 3, reps: "10 / 12" },
+      ]},
+    ],
+  },
+  {
+    id: "open-bar", name: "Open Bar", tagline: "Blank / custom — build your own",
+    days: [{ name: "Custom", exercises: [] }],
+  },
+];
+
+// Common exercises for the "Add exercise" search
+const EXERCISE_LIBRARY = [
+  { name: "Bench Press", muscles: ["chest","triceps"] },
+  { name: "Incline Dumbbell Press", muscles: ["chest","shoulders"] },
+  { name: "Cable Flyes", muscles: ["chest"] },
+  { name: "Dips", muscles: ["chest","triceps"] },
+  { name: "Push-up", muscles: ["chest","triceps"] },
+  { name: "Cable Crossover", muscles: ["chest"] },
+  { name: "Deadlift", muscles: ["back","hamstrings","glutes"] },
+  { name: "Romanian Deadlift", muscles: ["hamstrings","glutes"] },
+  { name: "Pull-ups", muscles: ["back","biceps"] },
+  { name: "Lat Pulldown", muscles: ["back","biceps"] },
+  { name: "Barbell Row", muscles: ["back","biceps"] },
+  { name: "Cable Row", muscles: ["back","biceps"] },
+  { name: "Bent-over Row", muscles: ["back","biceps"] },
+  { name: "Squat", muscles: ["quads","glutes","core"] },
+  { name: "Front Squat", muscles: ["quads","core"] },
+  { name: "Goblet Squat", muscles: ["quads","glutes"] },
+  { name: "Leg Press", muscles: ["quads","glutes"] },
+  { name: "Walking Lunges", muscles: ["quads","glutes"] },
+  { name: "Bulgarian Split Squat", muscles: ["glutes","quads"] },
+  { name: "Leg Extension", muscles: ["quads"] },
+  { name: "Leg Curl", muscles: ["hamstrings"] },
+  { name: "Hamstring Curl", muscles: ["hamstrings"] },
+  { name: "Hip Thrust", muscles: ["glutes","hamstrings"] },
+  { name: "Glute Bridge", muscles: ["glutes"] },
+  { name: "Cable Kickback", muscles: ["glutes"] },
+  { name: "Step-up", muscles: ["glutes","quads"] },
+  { name: "Calf Raise", muscles: ["calves"] },
+  { name: "Overhead Press", muscles: ["shoulders","triceps"] },
+  { name: "Lateral Raise", muscles: ["shoulders"] },
+  { name: "Front Raise", muscles: ["shoulders"] },
+  { name: "Rear Delt Fly", muscles: ["shoulders"] },
+  { name: "Shrugs", muscles: ["shoulders","back"] },
+  { name: "Barbell Curl", muscles: ["biceps"] },
+  { name: "Bicep Curl", muscles: ["biceps"] },
+  { name: "Hammer Curl", muscles: ["biceps"] },
+  { name: "Cable Curl", muscles: ["biceps"] },
+  { name: "Reverse Curl", muscles: ["biceps"] },
+  { name: "Tricep Pushdown", muscles: ["triceps"] },
+  { name: "Skull Crusher", muscles: ["triceps"] },
+  { name: "Overhead Tricep Extension", muscles: ["triceps"] },
+  { name: "Tricep Kickback", muscles: ["triceps"] },
+  { name: "Close-Grip Bench", muscles: ["triceps","chest"] },
+  { name: "Plank", muscles: ["core"] },
+  { name: "Mountain Climbers", muscles: ["core"] },
+  { name: "Hanging Leg Raise", muscles: ["core"] },
+  { name: "Russian Twist", muscles: ["core"] },
+  { name: "Burpees", muscles: ["chest","quads","core"] },
+  { name: "Kettlebell Swing", muscles: ["glutes","hamstrings","core"] },
+  { name: "Good Morning", muscles: ["hamstrings","back"] },
+  { name: "Hyperextension", muscles: ["back","glutes"] },
+];
+
+// ============== STORAGE ==============
+const Store = {
+  get(k, def) { try { const v = localStorage.getItem("racked." + k); return v == null ? def : JSON.parse(v); } catch { return def; } },
+  set(k, v) { try { localStorage.setItem("racked." + k, JSON.stringify(v)); } catch (e) { console.error("Store set failed:", e); } },
+  del(k) { localStorage.removeItem("racked." + k); },
+};
+
+// ============== STATE ==============
+let state = {
+  view: "home",
+  workout: null,
+  history: [],
+  profile: { units: "lbs" },
+  pendingTemplate: null,
+  summaryWorkout: null,
+  detailWorkout: null,
+};
+
+// ============== UTILS ==============
+const $ = id => document.getElementById(id);
+const fmt = n => n == null ? "—" : Number(n).toLocaleString();
+const todayStr = () => new Date().toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+const uuid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[c]); }
+
+function workoutTonnage(w) {
+  let t = 0;
+  w.exercises.forEach(ex => ex.sets.forEach(s => { if (s.weight && s.reps) t += s.weight * s.reps; }));
+  return t;
+}
+function workoutSetsReps(w) {
+  let sets = 0, reps = 0;
+  w.exercises.forEach(ex => ex.sets.forEach(s => { if (s.weight && s.reps) { sets++; reps += +s.reps; } }));
+  return { sets, reps };
+}
+
+function toast(msg) {
+  const t = document.createElement("div");
+  t.className = "toast"; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2200);
+}
+
+// ============== INIT ==============
+function init() {
+  state.history = Store.get("workouts", []);
+  state.workout = Store.get("activeWorkout", null);
+  state.profile = Store.get("profile", { units: "lbs" });
+
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./sw.js").catch(e => console.warn("SW reg failed", e));
+  }
+
+  // Tabbar nav
+  document.querySelectorAll(".tabbar button").forEach(b => {
+    b.addEventListener("click", () => goto(b.dataset.view));
+  });
+
+  // Handle ?action=start / ?action=repeat from PWA shortcuts
+  const params = new URLSearchParams(location.search);
+  const action = params.get("action");
+  if (action === "repeat" && state.history.length > 0) {
+    repeatLastWorkout();
+    return;
+  }
+
+  if (state.workout) {
+    goto("workout");
+  } else {
+    goto("home");
+  }
+}
+
+// ============== NAVIGATION ==============
+function goto(view, data) {
+  state.view = view;
+  if (data) state.viewData = data;
+  document.querySelectorAll(".view").forEach(v => v.classList.toggle("on", v.id === "view-" + view));
+  document.querySelectorAll(".tabbar button").forEach(b => b.classList.toggle("on", b.dataset.view === view));
+  $("tabbar").classList.toggle("hidden", ["workout","summary","detail"].includes(view));
+  ({
+    "home": renderHome,
+    "history": renderHistory,
+    "stats": renderStats,
+    "settings": renderSettings,
+    "workout": renderWorkout,
+    "summary": renderSummary,
+    "detail": renderDetail,
+  }[view] || (()=>{}))();
+  window.scrollTo(0, 0);
+}
+
+// ============== RECOMMENDATION ==============
+const ALL_MUSCLES = ["chest","back","shoulders","triceps","biceps","quads","hamstrings","glutes","calves","core"];
+const MUSCLE_LABEL = { chest: "Chest", back: "Back", shoulders: "Shoulders", triceps: "Triceps", biceps: "Biceps",
+  quads: "Quads", hamstrings: "Hamstrings", glutes: "Glutes", calves: "Calves", core: "Core" };
+
+function recommend() {
+  const now = Date.now();
+  const recent = state.history.filter(w => (now - new Date(w.startedAt).getTime()) / 86400000 < 14);
+  if (state.history.length === 0) {
+    return { type: "WELCOME", title: "Welcome to Racked", text: "Pick a template below to start your first workout." };
+  }
+  const muscleData = {};
+  recent.forEach(w => {
+    const dAgo = Math.floor((now - new Date(w.startedAt).getTime()) / 86400000);
+    w.exercises.forEach(ex => {
+      (ex.muscles || []).forEach(m => {
+        if (!muscleData[m]) muscleData[m] = { lastDays: 99, count7d: 0, sets14d: 0 };
+        if (dAgo < muscleData[m].lastDays) muscleData[m].lastDays = dAgo;
+        if (dAgo < 7) muscleData[m].count7d++;
+        muscleData[m].sets14d += ex.sets.filter(s => s.weight && s.reps).length;
+      });
+    });
+  });
+  // Overworked rule
+  const over = Object.entries(muscleData).find(([m,d]) => d.count7d >= 4);
+  if (over) {
+    return { type: "OVERWORKED", title: `Maybe rest ${MUSCLE_LABEL[over[0]].toLowerCase()} today`,
+      text: `You've trained ${MUSCLE_LABEL[over[0]].toLowerCase()} ${over[1].count7d} times this week. Consider hitting other muscle groups or taking a recovery day.` };
+  }
+  // Neglected rule
+  const trained = Object.keys(muscleData);
+  const neglected = ALL_MUSCLES.filter(m => !trained.includes(m));
+  if (neglected.length > 0) {
+    const m = neglected[0];
+    return { type: "NEGLECTED", title: `${MUSCLE_LABEL[m]} hasn't been hit in 14+ days`,
+      text: `Worth prioritizing ${MUSCLE_LABEL[m].toLowerCase()} today.` };
+  }
+  // Longest gap
+  const sorted = Object.entries(muscleData).sort((a,b) => b[1].lastDays - a[1].lastDays);
+  if (sorted.length && sorted[0][1].lastDays >= 4) {
+    const [m, d] = sorted[0];
+    return { type: "GAP", title: `${MUSCLE_LABEL[m]} — ${d.lastDays} days since last hit`,
+      text: `That's the longest gap. Good day to focus on ${MUSCLE_LABEL[m].toLowerCase()}.` };
+  }
+  return { type: "STEADY", title: "Looking balanced",
+    text: "Your training is well-distributed. Pick whichever feels right today." };
+}
+
+// ============== RENDER: HOME ==============
+function renderHome() {
+  $("appbar-right").textContent = todayStr();
+
+  // Continue card
+  if (state.workout) {
+    const ago = Math.round((Date.now() - new Date(state.workout.startedAt).getTime()) / 60000);
+    $("continue-slot").innerHTML = `
+      <div class="continue" onclick="goto('workout')">
+        <div>
+          <div class="label">In progress</div>
+          <div class="name">${escapeHtml(state.workout.name)}</div>
+          <div class="when">Started ${ago} min ago · tap to continue</div>
+        </div>
+        <div class="arrow">›</div>
+      </div>
+    `;
+  } else {
+    $("continue-slot").innerHTML = "";
+  }
+
+  // Recommendation
+  const rec = recommend();
+  $("rec-slot").innerHTML = `
+    <div class="rec">
+      <span class="pill">${rec.type === "OVERWORKED" ? "Recovery" : "Today"}</span>
+      <h3>${escapeHtml(rec.title)}</h3>
+      <p>${escapeHtml(rec.text)}</p>
+    </div>
+  `;
+
+  // Tiles
+  $("tiles").innerHTML = TEMPLATES.map(t => {
+    const dayCount = t.id === "open-bar" ? "" : `${t.days.length}-day split`;
+    return `<div class="tile ${t.id === "open-bar" ? "accent" : ""}" onclick="pickTemplate('${t.id}')">
+      <div class="ticon">${ICONS[t.id] || ""}</div>
+      <div class="tname">${escapeHtml(t.name)}</div>
+      <div class="tsub">${escapeHtml(t.tagline)}</div>
+      <div class="tdays">${dayCount}</div>
+    </div>`;
+  }).join("");
+
+  // Recent
+  const recent = state.history.slice(-3).reverse();
+  if (recent.length === 0) {
+    $("recent-slot").innerHTML = `<div class="empty"><div class="ic">📋</div>No workouts yet. Pick a template to get started.</div>`;
+  } else {
+    $("recent-slot").innerHTML = recent.map(w => {
+      const d = new Date(w.startedAt);
+      const dStr = d.toLocaleDateString("en-US", { month:"short", day:"numeric" });
+      const ton = workoutTonnage(w);
+      return `<div class="recent-row" onclick="openDetail('${w.id}')">
+        <div class="when">${dStr}</div>
+        <div class="ttl">${escapeHtml(w.name)}</div>
+        <div class="ton">${fmt(ton)} ${state.profile.units}</div>
+      </div>`;
+    }).join("");
+  }
+}
+
+// ============== RENDER: TEMPLATE → DAY PICKER ==============
+function pickTemplate(id) {
+  const tmpl = TEMPLATES.find(t => t.id === id);
+  if (!tmpl) return;
+  state.pendingTemplate = tmpl;
+  if (tmpl.days.length === 1) {
+    startWorkoutFromDay(tmpl, 0);
+  } else {
+    showDayPicker(tmpl);
+  }
+}
+
+function showDayPicker(tmpl) {
+  const lastByDay = {};  // day name → last workout ID
+  state.history.forEach(w => {
+    if (w.templateId === tmpl.id && w.templateDay) {
+      if (!lastByDay[w.templateDay] || new Date(w.startedAt) > new Date(lastByDay[w.templateDay].startedAt)) {
+        lastByDay[w.templateDay] = w;
+      }
+    }
+  });
+  const dayHtml = tmpl.days.map((d, i) => {
+    const last = lastByDay[d.name];
+    const sub = last ? `Last: ${new Date(last.startedAt).toLocaleDateString("en-US",{month:"short",day:"numeric"})} · ${fmt(workoutTonnage(last))} ${state.profile.units}` : `${d.exercises.length} exercises`;
+    return `<div class="day-row" onclick="startWorkoutFromDay(state.pendingTemplate, ${i})">
+      <div><div class="dn">${escapeHtml(d.name)}</div><div class="dx">${escapeHtml(sub)}</div></div>
+      <div style="color: var(--accent); font-size: 18px;">›</div>
+    </div>`;
+  }).join("");
+  const html = `
+    <div class="modal-bg" onclick="closeModal()"></div>
+    <div class="modal">
+      <h3>${escapeHtml(tmpl.name)}</h3>
+      <div class="sub">${escapeHtml(tmpl.tagline)} · pick a day</div>
+      <div class="day-list">${dayHtml}</div>
+      <button class="modal-close" onclick="closeModal()">Cancel</button>
+    </div>
+  `;
+  const modal = document.createElement("div");
+  modal.id = "modal-host"; modal.innerHTML = html;
+  document.body.appendChild(modal);
+}
+function closeModal() { const m = $("modal-host"); if (m) m.remove(); }
+
+// ============== START WORKOUT ==============
+function startWorkoutFromDay(tmpl, dayIdx) {
+  closeModal();
+  const day = tmpl.days[dayIdx];
+  // Find the last workout for this template+day to use as starting weights
+  const lastSame = state.history.slice().reverse().find(w => w.templateId === tmpl.id && w.templateDay === day.name);
+
+  const exercises = day.exercises.map(ex => {
+    const lastEx = lastSame ? lastSame.exercises.find(e => e.name === ex.name) : null;
+    const sets = [];
+    for (let i = 0; i < ex.sets; i++) {
+      const lastSet = lastEx && lastEx.sets[i];
+      sets.push({
+        weight: lastSet ? lastSet.weight : null,
+        reps: lastSet ? lastSet.reps : null,
+        rpe: null, notes: "", done: false,
+      });
+    }
+    return { name: ex.name, muscles: ex.muscles, targetReps: ex.reps, sets };
+  });
+
+  state.workout = {
+    id: uuid(),
+    templateId: tmpl.id,
+    templateName: tmpl.name,
+    templateDay: day.name,
+    name: `${day.name} Day`,
+    startedAt: new Date().toISOString(),
+    finishedAt: null,
+    exercises,
+  };
+  Store.set("activeWorkout", state.workout);
+  goto("workout");
+}
+
+function repeatLastWorkout() {
+  if (state.history.length === 0) { goto("home"); return; }
+  const last = state.history[state.history.length - 1];
+  const exercises = last.exercises.map(ex => ({
+    name: ex.name, muscles: ex.muscles || [], targetReps: ex.targetReps,
+    sets: ex.sets.map(s => ({ weight: s.weight, reps: s.reps, rpe: null, notes: "", done: false })),
+  }));
+  state.workout = {
+    id: uuid(),
+    templateId: last.templateId,
+    templateName: last.templateName,
+    templateDay: last.templateDay,
+    name: last.name,
+    startedAt: new Date().toISOString(),
+    finishedAt: null,
+    exercises,
+  };
+  Store.set("activeWorkout", state.workout);
+  goto("workout");
+}
+
+// ============== RENDER: WORKOUT ==============
+function renderWorkout() {
+  if (!state.workout) { goto("home"); return; }
+  $("wname").value = state.workout.name;
+  $("wname").oninput = (e) => { state.workout.name = e.target.value; Store.set("activeWorkout", state.workout); };
+
+  const exHtml = state.workout.exercises.map((ex, ei) => {
+    const setsHtml = ex.sets.map((s, si) => `
+      <div class="set-row${s.done ? " done" : ""}">
+        <div class="num">${si+1}</div>
+        <input type="number" inputmode="decimal" placeholder="${state.profile.units}" value="${s.weight ?? ""}" oninput="updateSet(${ei},${si},'weight',this.value)">
+        <input type="number" inputmode="numeric" placeholder="reps" value="${s.reps ?? ""}" oninput="updateSet(${ei},${si},'reps',this.value)">
+        <input type="number" inputmode="numeric" min="1" max="10" placeholder="RPE" value="${s.rpe ?? ""}" oninput="updateSet(${ei},${si},'rpe',this.value)">
+        <button class="check" onclick="toggleDone(${ei},${si})" aria-label="Mark complete">${s.done ? "✓" : ""}</button>
+      </div>
+    `).join("");
+    const targetReps = ex.targetReps ? ` · target ${ex.targetReps}` : "";
+    return `
+      <div class="exercise">
+        <div class="ehead">
+          <input class="ename" value="${escapeHtml(ex.name)}" oninput="updateExName(${ei}, this.value)">
+          <button class="emenu" onclick="removeExercise(${ei})" aria-label="Remove">⋯</button>
+        </div>
+        <div class="emuscles">${(ex.muscles || []).join(" · ")}${targetReps}</div>
+        <div class="set-head">
+          <div>#</div><div>Weight</div><div>Reps</div><div>RPE</div><div></div>
+        </div>
+        <div class="set-table">${setsHtml}</div>
+        <button class="add-btn" onclick="addSet(${ei})">+ Add set</button>
+      </div>
+    `;
+  }).join("");
+  $("exercises").innerHTML = exHtml;
+}
+
+function updateSet(ei, si, field, val) {
+  const v = val === "" ? null : (field === "notes" ? val : parseFloat(val));
+  state.workout.exercises[ei].sets[si][field] = isNaN(v) ? null : v;
+  Store.set("activeWorkout", state.workout);
+}
+function updateExName(ei, val) {
+  state.workout.exercises[ei].name = val;
+  Store.set("activeWorkout", state.workout);
+}
+function toggleDone(ei, si) {
+  state.workout.exercises[ei].sets[si].done = !state.workout.exercises[ei].sets[si].done;
+  Store.set("activeWorkout", state.workout);
+  renderWorkout();
+}
+function addSet(ei) {
+  const last = state.workout.exercises[ei].sets.slice(-1)[0];
+  state.workout.exercises[ei].sets.push({
+    weight: last ? last.weight : null, reps: last ? last.reps : null,
+    rpe: null, notes: "", done: false,
+  });
+  Store.set("activeWorkout", state.workout);
+  renderWorkout();
+}
+function removeExercise(ei) {
+  if (!confirm("Remove this exercise?")) return;
+  state.workout.exercises.splice(ei, 1);
+  Store.set("activeWorkout", state.workout);
+  renderWorkout();
+}
+
+function addExerciseDialog() {
+  const html = `
+    <div class="modal-bg" onclick="closeModal()"></div>
+    <div class="modal">
+      <h3>Add exercise</h3>
+      <div class="sub">Pick from the library or type your own</div>
+      <input class="ex-search" id="ex-search-in" placeholder="Search exercises…" oninput="filterExLib(this.value)">
+      <div class="ex-list" id="ex-list-box"></div>
+      <button class="modal-close" onclick="closeModal()">Cancel</button>
+    </div>
+  `;
+  const modal = document.createElement("div");
+  modal.id = "modal-host"; modal.innerHTML = html;
+  document.body.appendChild(modal);
+  filterExLib("");
+}
+
+function filterExLib(q) {
+  q = q.toLowerCase();
+  const list = q ? EXERCISE_LIBRARY.filter(e => e.name.toLowerCase().includes(q) || e.muscles.some(m => m.toLowerCase().includes(q))) : EXERCISE_LIBRARY;
+  const box = $("ex-list-box");
+  if (!box) return;
+  let html = list.map(e => `
+    <div class="row" onclick="addExercise('${e.name.replace(/'/g,"\\'")}', ['${e.muscles.join("','")}'])">
+      <div class="rn">${escapeHtml(e.name)}</div>
+      <div class="rm">${e.muscles.join(" · ")}</div>
+    </div>
+  `).join("");
+  if (q && !list.some(e => e.name.toLowerCase() === q.toLowerCase())) {
+    html += `<div class="row" onclick="addExercise('${q.replace(/'/g,"\\'")}', [])"><div class="rn">+ Add "${escapeHtml(q)}" (custom)</div><div class="rm">No muscle tags</div></div>`;
+  }
+  box.innerHTML = html;
+}
+
+function addExercise(name, muscles) {
+  closeModal();
+  state.workout.exercises.push({
+    name, muscles, targetReps: null,
+    sets: [
+      { weight: null, reps: null, rpe: null, notes: "", done: false },
+      { weight: null, reps: null, rpe: null, notes: "", done: false },
+      { weight: null, reps: null, rpe: null, notes: "", done: false },
+    ],
+  });
+  Store.set("activeWorkout", state.workout);
+  renderWorkout();
+}
+
+function cancelWorkout() {
+  if (!confirm("Discard this workout? It won't be saved.")) return;
+  state.workout = null;
+  Store.del("activeWorkout");
+  goto("home");
+}
+
+function finishWorkout() {
+  state.workout.finishedAt = new Date().toISOString();
+  state.history.push(state.workout);
+  Store.set("workouts", state.history);
+  state.summaryWorkout = state.workout;
+  state.workout = null;
+  Store.del("activeWorkout");
+  goto("summary");
+}
+
+// ============== RENDER: SUMMARY ==============
+function renderSummary() {
+  const w = state.summaryWorkout;
+  if (!w) { goto("home"); return; }
+  const ton = workoutTonnage(w);
+  const { sets, reps } = workoutSetsReps(w);
+  const dur = Math.round((new Date(w.finishedAt) - new Date(w.startedAt)) / 60000);
+  $("sum-tonnage").textContent = fmt(ton) + " " + state.profile.units;
+  $("sum-sets").textContent = sets;
+  $("sum-reps").textContent = reps;
+  $("sum-time").textContent = dur + "m";
+
+  const tops = w.exercises.map(ex => {
+    const completed = ex.sets.filter(s => s.weight && s.reps);
+    if (completed.length === 0) return null;
+    const top = completed.reduce((a, b) => (a.weight * a.reps > b.weight * b.reps ? a : b));
+    return { name: ex.name, weight: top.weight, reps: top.reps };
+  }).filter(Boolean);
+  $("sum-tops").innerHTML = tops.map(t => `
+    <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--line);">
+      <div style="font-weight:600;">${escapeHtml(t.name)}</div>
+      <div style="color:var(--accent); font-weight:700;">${t.weight} × ${t.reps}</div>
+    </div>
+  `).join("") || `<div class="muted">No completed sets</div>`;
+}
+
+// ============== LLM EXPORT ==============
+function workoutToMarkdown(w) {
+  const date = new Date(w.startedAt).toLocaleDateString();
+  const ton = workoutTonnage(w);
+  const { sets, reps } = workoutSetsReps(w);
+  const dur = w.finishedAt ? Math.round((new Date(w.finishedAt) - new Date(w.startedAt)) / 60000) : null;
+
+  let md = `# Workout Summary\n\n`;
+  md += `**Date:** ${date}\n`;
+  if (w.templateName) md += `**Split:** ${w.templateName}${w.templateDay ? " — " + w.templateDay : ""}\n`;
+  if (dur != null) md += `**Duration:** ${dur} min\n`;
+  md += `**Total tonnage:** ${ton.toLocaleString()} ${state.profile.units}\n`;
+  md += `**Sets:** ${sets} · **Reps:** ${reps}\n\n`;
+  md += `## Exercises\n\n`;
+  w.exercises.forEach(ex => {
+    md += `### ${ex.name}`;
+    if (ex.muscles && ex.muscles.length) md += ` _(${ex.muscles.join(", ")})_`;
+    md += `\n`;
+    ex.sets.forEach(s => {
+      if (s.weight || s.reps) {
+        md += `- ${s.weight ?? "?"} ${state.profile.units} × ${s.reps ?? "?"}`;
+        if (s.rpe) md += ` @ RPE ${s.rpe}`;
+        if (s.notes) md += ` — _${s.notes}_`;
+        md += `\n`;
+      }
+    });
+    md += `\n`;
+  });
+  md += `---\n\nAnalyze this workout. What stands out? What should I focus on next session?`;
+  return md;
+}
+
+function exportLLM(target) {
+  const text = workoutToMarkdown(state.summaryWorkout);
+  if (target === "copy") {
+    navigator.clipboard.writeText(text).then(() => toast("Copied to clipboard")).catch(() => toast("Copy failed"));
+  } else if (target === "chatgpt") {
+    window.open(`https://chatgpt.com/?q=${encodeURIComponent(text)}`, "_blank");
+  } else if (target === "claude") {
+    window.open(`https://claude.ai/new?q=${encodeURIComponent(text)}`, "_blank");
+  } else if (target === "share") {
+    if (navigator.share) {
+      navigator.share({ title: "Workout summary", text }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(text).then(() => toast("Copied — share manually"));
+    }
+  }
+}
+
+// ============== RENDER: HISTORY ==============
+function renderHistory() {
+  if (state.history.length === 0) {
+    $("history-slot").innerHTML = `<div class="empty"><div class="ic">📋</div>No workouts yet.</div>`;
+    return;
+  }
+  const sorted = state.history.slice().reverse();
+  $("history-slot").innerHTML = sorted.map(w => {
+    const d = new Date(w.startedAt);
+    const day = d.toLocaleDateString("en-US", { day: "numeric" });
+    const mo = d.toLocaleDateString("en-US", { month: "short" });
+    const ton = workoutTonnage(w);
+    const { sets } = workoutSetsReps(w);
+    return `<div class="history-row" onclick="openDetail('${w.id}')">
+      <div class="date"><span class="day">${day}</span>${mo}</div>
+      <div class="info">
+        <div class="name">${escapeHtml(w.name)}</div>
+        <div class="meta">${sets} sets · ${w.exercises.length} exercises${w.templateName ? " · " + escapeHtml(w.templateName) : ""}</div>
+      </div>
+      <div class="ton">${fmt(ton)}</div>
+    </div>`;
+  }).join("");
+}
+
+function openDetail(id) {
+  state.detailWorkout = state.history.find(w => w.id === id);
+  goto("detail");
+}
+
+function renderDetail() {
+  const w = state.detailWorkout;
+  if (!w) { goto("history"); return; }
+  $("detail-name").textContent = w.name;
+  const ton = workoutTonnage(w);
+  const { sets, reps } = workoutSetsReps(w);
+  const dur = w.finishedAt ? Math.round((new Date(w.finishedAt) - new Date(w.startedAt)) / 60000) : null;
+  let html = `
+    <div class="card">
+      <div class="muted" style="font-size:11px; text-transform:uppercase; letter-spacing:0.08em; font-weight:700;">${new Date(w.startedAt).toLocaleString()}</div>
+      <div style="margin-top:8px; display:flex; gap:16px;">
+        <div><strong>${fmt(ton)}</strong> <span class="muted">${state.profile.units}</span></div>
+        <div><strong>${sets}</strong> <span class="muted">sets</span></div>
+        <div><strong>${reps}</strong> <span class="muted">reps</span></div>
+        ${dur != null ? `<div><strong>${dur}</strong> <span class="muted">min</span></div>` : ""}
+      </div>
+    </div>
+  `;
+  w.exercises.forEach(ex => {
+    html += `<div class="card">
+      <div style="font-weight:700; font-size:15px;">${escapeHtml(ex.name)}</div>
+      <div class="muted" style="font-size:11px; margin-top:2px; text-transform:uppercase; letter-spacing:0.06em;">${(ex.muscles || []).join(" · ")}</div>
+      <div style="margin-top: 8px;">${ex.sets.map((s,i) => s.weight && s.reps ? `<div style="padding:4px 0; border-bottom:1px solid var(--line); display:flex; justify-content:space-between;">
+        <span class="muted">Set ${i+1}</span>
+        <span><strong>${s.weight}</strong> × <strong>${s.reps}</strong>${s.rpe ? ` <span class="muted">@ ${s.rpe}</span>` : ""}</span>
+      </div>` : "").join("")}</div>
+    </div>`;
+  });
+  html += `
+    <div class="export-row">
+      <button class="export-btn" onclick="exportLLMFromDetail('chatgpt')">ChatGPT</button>
+      <button class="export-btn" onclick="exportLLMFromDetail('claude')">Claude</button>
+      <button class="export-btn" onclick="exportLLMFromDetail('copy')">Copy</button>
+      <button class="export-btn" onclick="exportLLMFromDetail('share')">Share</button>
+    </div>
+    <button class="export-btn" style="width:calc(100% - 32px); margin: 8px 16px; color: var(--bad); border-color: rgba(248,113,113,0.2);" onclick="deleteWorkout('${w.id}')">Delete this workout</button>
+  `;
+  $("detail-body").innerHTML = html;
+}
+
+function exportLLMFromDetail(target) {
+  state.summaryWorkout = state.detailWorkout;
+  exportLLM(target);
+}
+
+function deleteWorkout(id) {
+  if (!confirm("Delete this workout? This can't be undone.")) return;
+  state.history = state.history.filter(w => w.id !== id);
+  Store.set("workouts", state.history);
+  goto("history");
+}
+
+// ============== RENDER: STATS ==============
+function renderStats() {
+  const h = state.history;
+  let totalTon = 0, totalSets = 0, totalReps = 0;
+  h.forEach(w => {
+    totalTon += workoutTonnage(w);
+    const sr = workoutSetsReps(w);
+    totalSets += sr.sets; totalReps += sr.reps;
+  });
+  $("stat-sessions").textContent = h.length;
+  $("stat-tonnage").textContent = totalTon >= 1000 ? Math.round(totalTon/1000) + "K" : fmt(totalTon);
+  $("stat-sets").textContent = fmt(totalSets);
+  $("stat-reps").textContent = fmt(totalReps);
+
+  // Frequency by muscle (last 30d)
+  const cutoff = Date.now() - 30 * 86400000;
+  const muscleCount = {};
+  h.forEach(w => {
+    if (new Date(w.startedAt).getTime() < cutoff) return;
+    const seenInWorkout = new Set();
+    w.exercises.forEach(ex => (ex.muscles || []).forEach(m => {
+      if (!seenInWorkout.has(m)) {
+        muscleCount[m] = (muscleCount[m] || 0) + 1;
+        seenInWorkout.add(m);
+      }
+    }));
+  });
+  const sorted = Object.entries(muscleCount).sort((a,b) => b[1] - a[1]);
+  if (sorted.length === 0) {
+    $("stat-freq").innerHTML = `<div class="muted">No data yet.</div>`;
+  } else {
+    const max = sorted[0][1];
+    $("stat-freq").innerHTML = sorted.map(([m, n]) => `
+      <div style="display:flex; align-items:center; gap:10px; padding:6px 0;">
+        <div style="width:90px; font-size:13px;">${MUSCLE_LABEL[m] || m}</div>
+        <div style="flex:1; height:10px; background:rgba(255,255,255,0.05); border-radius:999px; overflow:hidden;">
+          <div style="height:100%; width:${(n/max*100).toFixed(0)}%; background:var(--accent);"></div>
+        </div>
+        <div style="font-size:13px; color:var(--mute); font-variant-numeric:tabular-nums;">${n}×</div>
+      </div>
+    `).join("");
+  }
+
+  // PRs (best e1RM per exercise) using Epley
+  const prsByExercise = {};
+  h.forEach(w => w.exercises.forEach(ex => {
+    ex.sets.forEach(s => {
+      if (s.weight && s.reps) {
+        const e1rm = s.weight * (1 + s.reps / 30);
+        if (!prsByExercise[ex.name] || e1rm > prsByExercise[ex.name].e1rm) {
+          prsByExercise[ex.name] = { e1rm, weight: s.weight, reps: s.reps, date: w.startedAt };
+        }
+      }
+    });
+  }));
+  const prList = Object.entries(prsByExercise).sort((a,b) => b[1].e1rm - a[1].e1rm).slice(0, 10);
+  if (prList.length === 0) {
+    $("stat-prs").innerHTML = `<div class="muted">Log some workouts to see your PRs.</div>`;
+  } else {
+    $("stat-prs").innerHTML = prList.map(([name, p]) => `
+      <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--line);">
+        <div style="font-weight:600; font-size:14px;">${escapeHtml(name)}</div>
+        <div><strong>${p.weight} × ${p.reps}</strong> <span class="muted" style="font-size:11px;">e1RM ${Math.round(p.e1rm)}</span></div>
+      </div>
+    `).join("");
+  }
+}
+
+// ============== RENDER: SETTINGS ==============
+function renderSettings() {
+  $("unit-lbs").style.background = state.profile.units === "lbs" ? "var(--accent)" : "";
+  $("unit-lbs").style.color = state.profile.units === "lbs" ? "#000" : "";
+  $("unit-kg").style.background = state.profile.units === "kg" ? "var(--accent)" : "";
+  $("unit-kg").style.color = state.profile.units === "kg" ? "#000" : "";
+}
+function setUnits(u) {
+  state.profile.units = u;
+  Store.set("profile", state.profile);
+  renderSettings();
+  toast("Units: " + u);
+}
+
+function exportAllData() {
+  const data = {
+    exportedAt: new Date().toISOString(),
+    profile: state.profile,
+    workouts: state.history,
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = `racked-export-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function clearAllData() {
+  if (!confirm("Erase all workouts and settings? This can't be undone.")) return;
+  if (!confirm("Are you sure? Really sure?")) return;
+  localStorage.clear();
+  state = { view: "home", workout: null, history: [], profile: { units: "lbs" }, pendingTemplate: null, summaryWorkout: null, detailWorkout: null };
+  toast("All data cleared");
+  goto("home");
+}
+
+// Boot
+init();
+</script>
+
+</body>
+</html>
